@@ -1,0 +1,10 @@
+version: '3'
+
+tasks:
+  docker:
+    desc: Build the docker image manually
+    preconditions:
+    - sh: '[[ -n "${TAG}" ]]'
+      msg: Must specify $TAG
+    cmds:
+    - docker build . -t ghcr.io/nicjohnson145/12tmpl:$TAG

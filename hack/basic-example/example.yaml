@@ -1,0 +1,62 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: base-config
+data:
+  config.yaml: |-
+    foo: some-foo-value
+    bar: {{ .Env.BAR }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-values
+# Obviously in a real scenario this wouldnt be in the repo in plaintext
+stringData:
+  BAR: some-secret-bar-key
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-pod
+spec:
+  initContainers:
+  - name: config-expand
+    image: ghcr.io/nicjohnson145/12tmpl:latest
+    imagePullPolicy: IfNotPresent
+    env:
+    - name: TWELVETMPL_INPUT_PATH
+      value: /config/input/config.yaml
+    - name: TWELVETMPL_OUTPUT_PATH
+      value: /config/output/config.yaml
+    envFrom:
+    - secretRef:
+        name: secret-values
+    volumeMounts:
+    - name: config
+      mountPath: /config/input
+    - name: config-scratch
+      mountPath: /config/output
+  containers:
+  - name: workload
+    image: alpine:latest
+    volumeMounts:
+    - name: config-scratch
+      mountPath: /config
+    command:
+    - /bin/sh
+    - -c
+    args:
+    - |-
+      while true; do
+        cat /config/config.yaml;
+        printf "\n-----\n"
+        sleep 3;
+      done
+  volumes:
+  - name: config-scratch
+    emptyDir: {}
+  - name: config
+    configMap:
+      name: base-config

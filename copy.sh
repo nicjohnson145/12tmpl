@@ -1,0 +1,3 @@
+#! /bin/sh
+
+cat $TWELVETMPL_INPUT_PATH | gomplate > $TWELVETMPL_OUTPUT_PATH
